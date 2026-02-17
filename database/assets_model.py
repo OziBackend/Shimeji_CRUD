@@ -9,6 +9,8 @@ class Category(BaseModel):
     is_enabled: bool = Field(default=False, description="Category is enabled")
     is_premium: bool = Field(default=False, description="Category is premium")
     sequence: int = Field(default=0, description="Category sequence")
+    image_url: str = Field(default=None, description="Category image URL")
+    thumbnail_url: str = Field(default=None, description="Category thumbnail URL")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Creation timestamp")
     updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last update timestamp")
 
@@ -20,11 +22,16 @@ class Asset(BaseModel):
     category_id: str = Field(..., description="Category ID")
     name: str = Field(..., description="Asset name")
     description: Optional[str] = Field(None, description="Asset description")
-    image_url: str = Field(..., description="Asset image URL")
-    thumbnail_url: str = Field(..., description="Asset thumbnail URL")
+    image_url: str = Field(default=None, description="Asset image URL")
+    thumbnail_url: str = Field(default=None, description="Asset thumbnail URL")
     is_enabled: bool = Field(default=False, description="Asset is enabled")
     is_premium: bool = Field(default=False, description="Asset is premium")
     sequence: int = Field(default=0, description="Asset sequence")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Creation timestamp")
     updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last update timestamp")
+    moreFields: object = Field(default={
+        "actionFile": str | None,
+        "behaviorFile": str | None,
+        "assets": list[object] | None
+    }, description="Additional fields")
 
