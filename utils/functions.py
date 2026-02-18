@@ -8,21 +8,41 @@ def create_target_Assets_folders(name):
 
 
 
-async def save_images_by_folder(
+async def save_files_by_folder(
     folder_path,
-    images
+    files
 ):
     try:
-        for image in images:
-            image_name = image.filename
-            image_path = os.path.join(folder_path, image_name)
-            with open(image_path, "wb") as f:
-                f.write(await image.read())
+        for file in files:
+            file_name = file.filename
+            file_path = os.path.join(folder_path, file_name)
+            with open(file_path, "wb") as f:
+                f.write(await file.read())
         return {
-            "message": f"{len(images)} images saved successfully"
+            "message": f"{len(files)} files saved successfully"
         }
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to save images: {e}"
+            detail=f"Failed to save files: {e}"
         )
+
+async def save_single_file_by_folder(
+    folder_path,
+    file
+):
+    try:
+        
+        file_name = file.filename
+        file_path = os.path.join(folder_path, file_name)
+        with open(file_path, "wb") as f:
+            f.write(await file.read())
+        return {
+            "message": f"File saved successfully"
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save file: {e}"
+        )
+
