@@ -100,3 +100,20 @@ async def updateAsset(
 
     result = await controller.updateAsset(frame_id, requiredFunction)
     return result
+
+@router.put("/addValueInMoreFields", response_model=dict)
+async def add_value_in_more_fields(
+    request: Request
+):
+
+    # Get asset_id from query params
+    asset_id = request.query_params.get("asset_id")
+    
+    if not asset_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Asset ID is required"
+        )
+
+    result = await controller.addValueInMoreFields(request, asset_id)
+    return result

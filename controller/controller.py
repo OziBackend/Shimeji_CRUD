@@ -241,3 +241,59 @@ async def updateAsset(frame_id, requiredFunction):
             status_code=500,
             detail=f"Failed to update asset view: {e}"
         )
+
+async def addValueInMoreFields(
+    request,
+    asset_id
+):
+    try:
+        db = get_assets_db()
+        collection = db[config.ASSETS_COLLECTION_NAME]
+
+        # Get the key-value pairs from request body
+        try:
+            body = await request.json()
+        except Exception as json_error:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid JSON in request body: {json_error}"
+            )
+        
+        if not body or not isinstance(body, dict):
+            raise HTTPException(
+                status_code=400,
+                detail="Request body must contain key-value pairs"
+            )
+
+        # Build the update query to add/update fields in moreFields
+        update_fields = {}
+        for key, value in body.items():
+            update_fields[f"moreFields.{key}"] = value
+
+        # Update the asset
+        result = await collection.update_one(
+            {"_id": ObjectId(asset_id)},
+            {
+                "$set": update_fields,
+                "$currentDate": {"updated_at": True}
+            }
+        )
+
+        if result.matched_count == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="Asset not found"
+            )
+
+        return {
+            "message": f"Successfully added/updated {len(body)} field(s) in moreFields",
+            "updated_fields": list(body.keys())
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update moreFields: {e}"
+        )
