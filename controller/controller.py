@@ -1,5 +1,6 @@
 import os
 from bson import ObjectId
+from datetime import datetime
 
 from utils.preprocess_image import create_thumbnail
 
@@ -83,8 +84,8 @@ async def get_all_categories(
             "name": 1,
             "is_premium": 1
         }
-        # 1. Fetch the data
-        categories = await collection.find({},projection).to_list(length=None)
+        # 1. Fetch the data sorted by name
+        categories = await collection.find({},projection).sort("name", 1).to_list(length=None)
         
         # 2. Convert ObjectId to string for every document
         for category in categories:
@@ -296,4 +297,70 @@ async def addValueInMoreFields(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to update moreFields: {e}"
+        )
+
+async def update_thumbnail(asset_id, thumbnail):
+    try:
+        db = get_assets_db()
+        collection = db[config.ASSETS_COLLECTION_NAME]
+
+        # Validate that the file is a GIF
+        if not thumbnail.filename.lower().endswith('.gif'):
+            raise HTTPException(
+                status_code=400,
+                detail="Thumbnail must be a .gif file"
+            )
+
+        # Get the asset to find its category and name
+        asset = await collection.find_one({"_id": ObjectId(asset_id)})
+        
+        if not asset:
+            raise HTTPException(
+                status_code=404,
+                detail="Asset not found"
+            )
+
+        # Extract category and asset name from existing thumbnail_url or use asset name
+        category_name = asset.get("name", "unknown").replace(" ", "_").lower()
+        
+        # Create thumbnail directory path
+        thumbnails_folder = f"{config.SHIMEJI_ASSETS_THUMBNAIL_DIR}/{category_name}"
+        os.makedirs(thumbnails_folder, exist_ok=True)
+
+        # Save the new thumbnail
+        await save_single_file_by_folder(thumbnails_folder, thumbnail)
+        
+        # Generate the new thumbnail URL
+        thumbnail_url = f"{config.IMAGE_URL_PREFIX}/{thumbnails_folder}/{thumbnail.filename}"
+
+        # Update the asset with new thumbnail URL
+        result = await collection.update_one(
+            {"_id": ObjectId(asset_id)},
+            {
+                "$set": {
+                    "thumbnail_url": thumbnail_url,
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+
+        if result.matched_count == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="Asset not found"
+            )
+
+        return {
+            "message": "Thumbnail updated successfully",
+            "thumbnail_url": thumbnail_url,
+            "file_type": "gif"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"ERROR: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update thumbnail: {e}"
         )

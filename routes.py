@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, UploadFile, File, Form
 from fastapi import HTTPException
+from fastapi.responses import JSONResponse
 
 from controller import controller
 
@@ -116,4 +117,25 @@ async def add_value_in_more_fields(
         )
 
     result = await controller.addValueInMoreFields(request, asset_id)
+    return result
+
+@router.put("/updateThumbnail", response_model=dict)
+async def update_thumbnail(
+    request: Request,
+    asset_id: str = Form(...),
+    thumbnail: UploadFile = File(...)
+):
+    if not asset_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Asset ID is required"
+        )
+    
+    if not thumbnail or thumbnail.filename == "":
+        raise HTTPException(
+            status_code=400,
+            detail="Thumbnail file is required"
+        )
+    
+    result = await controller.update_thumbnail(asset_id, thumbnail)
     return result
